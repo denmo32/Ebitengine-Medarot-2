@@ -86,12 +86,12 @@ func LoadParts(filePath string) (map[string]*Part, error) {
 			Category: PartCategory(record[3]),
 			Trait:    Trait(record[4]),
 			// weapon_type (record[5]) は現在Part構造体にないので読み飛ばす
-			Armor:    armor,
-			MaxArmor: armor,
-			Power:    parseInt(record[7], 0), // power はインデックス7
-			Charge:   parseInt(record[8], 1), // charge はインデックス8
-			Cooldown: parseInt(record[9], 1), // cooldown はインデックス9
-			// defense (record[10]) は現在Part構造体にないので読み飛ばす
+			Armor:      armor,
+			MaxArmor:   armor,
+			Power:      parseInt(record[7], 0),  // power はインデックス7
+			Charge:     parseInt(record[8], 1),  // charge はインデックス8
+			Cooldown:   parseInt(record[9], 1),  // cooldown はインデックス9
+			Defense:    parseInt(record[10], 0), // defense はインデックス10
 			Accuracy:   parseInt(record[11], 0), // accuracy はインデックス11
 			Mobility:   parseInt(record[12], 0), // mobility はインデックス12
 			Propulsion: parseInt(record[13], 0), // propulsion はインデックス13

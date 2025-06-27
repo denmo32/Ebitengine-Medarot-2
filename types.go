@@ -196,6 +196,7 @@ type Part struct {
 	Cooldown   int
 	Propulsion int
 	Mobility   int
+	Defense    int
 	IsBroken   bool
 }
 type Medal struct {
