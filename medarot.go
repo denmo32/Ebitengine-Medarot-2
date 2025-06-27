@@ -190,6 +190,9 @@ func (m *Medarot) ExecuteAction(balanceConfig *BalanceConfig) {
 	} else {
 		m.LastActionLog = fmt.Sprintf("%sの%s攻撃は%sに外れた！", m.Name, part.PartName, target.Name)
 	}
+	
+	// 将来の拡張で、行動の結果自身がダメージを受ける効果（カウンター、反動など）によって
+    // 頭部が破壊された場合を考慮し、自身の状態をチェックする。
 	if head := m.GetPart(PartSlotHead); head != nil && head.IsBroken {
 		m.ChangeState(StateBroken)
 	}
@@ -241,11 +244,16 @@ func (m *Medarot) GetOverallMobility() int {
 
 // applyDamage はパーツにダメージを適用する
 func (m *Medarot) applyDamage(part *Part, damage int) {
-	part.Armor -= damage
-	if part.Armor <= 0 {
-		part.Armor = 0
-		part.IsBroken = true
-	}
+    part.Armor -= damage
+    if part.Armor <= 0 {
+        part.Armor = 0
+        part.IsBroken = true
+        
+        // もし破壊されたのが頭パーツなら、即座に機能停止状態にする
+        if part.Type == PartTypeHead {
+            m.ChangeState(StateBroken)
+        }
+    }
 }
 
 // calculateHit は命中判定を行う
