@@ -42,53 +42,64 @@ func NewGame(gameData *GameData, config Config, font text.Face) *Game {
 		widget.ContainerOpts.Layout(widget.NewStackedLayout()),
 	)
 
-	// mainUIContainerは、情報パネルとバトルフィールドを保持します。
+	// mainUIContainerをGridLayoutに変更し、情報パネルとバトルフィールドを並べて配置します。
+	// 3つの列: チーム1パネル (固定幅), バトルフィールド (伸縮), チーム2パネル (固定幅)
 	mainUIContainer := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewRowLayout(
-			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
-			widget.RowLayoutOpts.Spacing(g.Config.UI.InfoPanel.Padding),
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(3),
+			// 1列目 (チーム1パネル): 伸縮しない
+			// 2列目 (バトルフィールド): 水平方向に伸縮
+			// 3列目 (チーム2パネル): 伸縮しない
+			widget.GridLayoutOpts.Stretch([]bool{false, true, false}, []bool{true}),
+			widget.GridLayoutOpts.Spacing(g.Config.UI.InfoPanel.Padding, 0),
 		)),
+		// [FIXED] ここにあったPadding設定を完全に削除
 	)
 	rootContainer.AddChild(mainUIContainer)
 
-	// infoPanelsRowは、両チームの情報パネルを水平に並べます。
-	infoPanelsRow := widget.NewContainer(
-		widget.ContainerOpts.Layout(widget.NewGridLayout(
-			widget.GridLayoutOpts.Columns(2),
-			widget.GridLayoutOpts.Stretch([]bool{false, false}, []bool{true}), // パネル自体のサイズは固定
-			widget.GridLayoutOpts.Spacing(g.Config.UI.InfoPanel.Padding, 0),
-			// [FIXED] この行は現在のebitenuiのAPIに存在しないため削除しました。
-			// widget.GridLayoutOpts.Alignment(widget.AlignmentCenter, widget.AlignmentStart),
-		)),
-	)
-	mainUIContainer.AddChild(infoPanelsRow)
-
-	// チーム1の情報パネルのコンテナ
+	// チーム1の情報パネルのコンテナを1列目に配置
 	team1PanelContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
 			widget.RowLayoutOpts.Spacing(g.Config.UI.InfoPanel.Padding),
 		)),
+		widget.ContainerOpts.WidgetOpts(
+			widget.WidgetOpts.MinSize(int(g.Config.UI.InfoPanel.BlockWidth), 0), // 明示的に最小幅を設定
+			widget.WidgetOpts.LayoutData(widget.GridLayoutData{
+				HorizontalPosition: widget.GridLayoutPositionCenter,
+				VerticalPosition:   widget.GridLayoutPositionCenter,
+			}),
+		),
 	)
-	infoPanelsRow.AddChild(team1PanelContainer)
+	mainUIContainer.AddChild(team1PanelContainer)
 
-	// チーム2の情報パネルのコンテナ
+	// バトルフィールド描画領域を2列目に配置し、残りのスペースを埋めるようにStretchを設定します。
+	g.battlefieldContainer = widget.NewContainer(
+		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.Transparent)),
+		widget.ContainerOpts.WidgetOpts(
+			widget.WidgetOpts.LayoutData(widget.GridLayoutData{
+				HorizontalPosition: widget.GridLayoutPositionCenter,
+				VerticalPosition:   widget.GridLayoutPositionCenter,
+			}),
+		),
+	)
+	mainUIContainer.AddChild(g.battlefieldContainer)
+
+	// チーム2の情報パネルのコンテナを3列目に配置
 	team2PanelContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
 			widget.RowLayoutOpts.Spacing(g.Config.UI.InfoPanel.Padding),
 		)),
+		widget.ContainerOpts.WidgetOpts(
+			widget.WidgetOpts.MinSize(int(g.Config.UI.InfoPanel.BlockWidth), 0), // 明示的に最小幅を設定
+			widget.WidgetOpts.LayoutData(widget.GridLayoutData{
+				HorizontalPosition: widget.GridLayoutPositionCenter,
+				VerticalPosition:   widget.GridLayoutPositionCenter,
+			}),
+		),
 	)
-	infoPanelsRow.AddChild(team2PanelContainer)
-
-	// バトルフィールド描画領域用のプレースホルダー
-	g.battlefieldContainer = widget.NewContainer(
-		widget.ContainerOpts.BackgroundImage(image.NewNineSliceColor(color.Transparent)),
-		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
-			Stretch: true, // 垂直方向に残りのスペースを埋める
-		})),
-	)
-	mainUIContainer.AddChild(g.battlefieldContainer)
+	mainUIContainer.AddChild(team2PanelContainer)
 
 	// メダロット情報パネルを生成して配置
 	medarotInfoPanelUIs = make(map[string]*infoPanelUI)
@@ -112,7 +123,7 @@ func NewGame(gameData *GameData, config Config, font text.Face) *Game {
 
 // Update はゲームのロジックを更新します
 func (g *Game) Update() error {
-	g.ui.Update()
+	g.ui.Update() // UIの状態を更新します
 
 	if g.restartRequested {
 		// (リスタート処理は未実装)
@@ -161,7 +172,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	g.ui.Draw(screen)
+	g.ui.Draw(screen) // UIを描画します
 
 	if g.DebugMode {
 		ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f\nState: %s",
@@ -245,6 +256,7 @@ func (g *Game) processActions() {
 	}
 	if actingMedarot.State != StateReadyToExecuteAction {
 		return
+		// PlayerActionSelect状態への遷移は、プレイヤーチームの行動準備ができた場合のみ行う
 	}
 	if actingMedarot.Team == g.PlayerTeam {
 		g.State = StatePlayerActionSelect
