@@ -3,15 +3,10 @@ package main
 import (
 	"image/color"
 
-	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/widget"
-	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
-// =============================================================================
-// 定数 (Enums)
-// =============================================================================
-
+// ... (TeamID, MedarotState, GameState, etc. は変更なし) ...
 type TeamID int
 type MedarotState string
 type GameState string
@@ -24,42 +19,36 @@ const (
 	Team1 TeamID = 0
 	Team2 TeamID = 1
 )
-
 const (
-	StateReadyToSelectAction  MedarotState = "準備完了"
-	StateActionCharging       MedarotState = "チャージ中"
-	StateReadyToExecuteAction MedarotState = "実行準備"
-	StateActionCooldown       MedarotState = "クールダウン"
-	StateBroken               MedarotState = "機能停止"
+	StateIdle     MedarotState = "待機"
+	StateCharging MedarotState = "チャージ中"
+	StateReady    MedarotState = "実行準備"
+	StateCooldown MedarotState = "クールダウン"
+	StateBroken   MedarotState = "機能停止"
 )
-
 const (
 	StatePlaying            GameState = "Playing"
 	StatePlayerActionSelect GameState = "PlayerActionSelect"
 	StateMessage            GameState = "Message"
 	StateGameOver           GameState = "GameOver"
 )
-
 const (
 	PartSlotHead     PartSlotKey = "head"
 	PartSlotRightArm PartSlotKey = "r_arm"
 	PartSlotLeftArm  PartSlotKey = "l_arm"
 	PartSlotLegs     PartSlotKey = "legs"
 )
-
 const (
 	PartTypeHead PartType = "HEAD"
 	PartTypeRArm PartType = "R_ARM"
 	PartTypeLArm PartType = "L_ARM"
 	PartTypeLegs PartType = "LEG"
 )
-
 const (
 	CategoryShoot PartCategory = "SHOOT"
 	CategoryMelee PartCategory = "FIGHT"
 	CategoryNone  PartCategory = "NONE"
 )
-
 const (
 	TraitAim     Trait = "AIM"
 	TraitStrike  Trait = "STRIKE"
@@ -67,12 +56,7 @@ const (
 	TraitNormal  Trait = "NORMAL"
 	TraitNone    Trait = "NONE"
 )
-
 const PlayersPerTeam = 3
-
-// =============================================================================
-// 設定 (Config) 関連の構造体
-// =============================================================================
 
 type Config struct {
 	Balance BalanceConfig
@@ -82,7 +66,10 @@ type Config struct {
 type BalanceConfig struct {
 	Time struct {
 		PropulsionEffectRate float64
-		OverallTimeDivisor   float64
+		// [REMOVED] 古いフィールドを削除
+		// OverallTimeDivisor   float64
+		// [NEW] 新しいフィールドを追加
+		GameSpeedMultiplier float64
 	}
 	Hit struct {
 		BaseChance         int
@@ -96,6 +83,7 @@ type BalanceConfig struct {
 	}
 }
 
+// ... (UIConfig, GameData, etc. は変更なし) ...
 type UIConfig struct {
 	Screen struct {
 		Width  int
@@ -140,17 +128,11 @@ type UIConfig struct {
 		Background color.Color
 	}
 }
-
-// =============================================================================
-// ゲームデータ関連の構造体
-// =============================================================================
-
 type GameData struct {
 	Medals   []Medal
 	AllParts map[string]*Part
 	Medarots []MedarotData
 }
-
 type MedarotData struct {
 	ID         string
 	Name       string
@@ -163,7 +145,6 @@ type MedarotData struct {
 	LegsID     string
 	DrawIndex  int
 }
-
 type PartData struct {
 	ID         string
 	Name       string
@@ -178,17 +159,11 @@ type PartData struct {
 	Propulsion int
 	Mobility   int
 }
-
 type MedalData struct {
 	ID         string
 	Name       string
 	SkillLevel int
 }
-
-// =============================================================================
-// ゲームロジック関連の構造体
-// =============================================================================
-
 type Medarot struct {
 	ID                string
 	Name              string
@@ -204,8 +179,9 @@ type Medarot struct {
 	IsEvasionDisabled bool
 	IsDefenseDisabled bool
 	DrawIndex         int
+	ProgressCounter   float64
+	TotalDuration     float64
 }
-
 type Part struct {
 	ID         string
 	PartName   string
@@ -222,52 +198,17 @@ type Part struct {
 	Mobility   int
 	IsBroken   bool
 }
-
 type Medal struct {
 	ID         string
 	Name       string
 	SkillLevel int
 }
-
-// =============================================================================
-// ゲーム全体の状態とUIを管理する構造体
-// =============================================================================
-
-type Game struct {
-	// Game State
-	GameData              *GameData
-	Config                Config
-	Medarots              []*Medarot
-	TickCount             int64
-	DebugMode             bool
-	State                 GameState
-	PlayerTeam            TeamID
-	winner                TeamID
-	message               string
-	actionQueue           []*Medarot
-	sortedMedarotsForDraw []*Medarot
-	team1Leader           *Medarot
-	team2Leader           *Medarot
-	playerActionTarget    *Medarot
-	restartRequested      bool
-	postMessageCallback   func()
-	MplusFont             text.Face
-
-	// EbitenUI
-	ui                   *ebitenui.UI
-	battlefieldContainer *widget.Container
-	actionModal          widget.PreferredSizeLocateableWidget
-	messageWindow        widget.PreferredSizeLocateableWidget
-}
-
-// UI要素への参照を保持する構造体
 type infoPanelUI struct {
 	rootContainer *widget.Container
 	nameText      *widget.Text
 	stateText     *widget.Text
 	partSlots     map[PartSlotKey]*infoPanelPartUI
 }
-
 type infoPanelPartUI struct {
 	partNameText *widget.Text
 	hpText       *widget.Text

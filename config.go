@@ -1,9 +1,8 @@
 package main
 
 import (
-	"image/color"
-
 	"github.com/ebitenui/ebitenui/widget"
+	"image/color"
 )
 
 func LoadConfig() Config {
@@ -14,10 +13,14 @@ func LoadConfig() Config {
 		Balance: BalanceConfig{
 			Time: struct {
 				PropulsionEffectRate float64
-				OverallTimeDivisor   float64
+				// [REMOVED] OverallTimeDivisor を削除
+				// OverallTimeDivisor   float64
+				// [NEW] ゲーム全体の速度倍率を追加
+				GameSpeedMultiplier float64
 			}{
 				PropulsionEffectRate: 0.01,
-				OverallTimeDivisor:   1.0,
+				// [NEW] 1.0を基準速度とする。値を大きくするとゲームが速くなる。
+				GameSpeedMultiplier: 50,
 			},
 			Hit: struct {
 				BaseChance         int

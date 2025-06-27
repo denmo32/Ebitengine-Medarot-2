@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// ... (parseInt, parseBool, LoadMedalsは変更なし) ...
 func parseInt(s string, defaultValue int) int {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -36,6 +37,7 @@ func LoadMedals(filePath string) ([]Medal, error) {
 
 	var medals []Medal
 	for {
+		// medals.csv の列数が少ないので、lenチェックは不要
 		record, err := reader.Read()
 		if err == io.EOF {
 			break
@@ -43,15 +45,20 @@ func LoadMedals(filePath string) ([]Medal, error) {
 		if err != nil {
 			continue
 		}
+		// medals.csv の列構造に合わせて修正
 		medals = append(medals, Medal{
-			ID:         record[0],
-			Name:       record[1],
-			SkillLevel: parseInt(record[2], 1),
+			ID:   record[0],
+			Name: record[1],
+			// skill_shoot, skill_fightを考慮して、ここでは単純にSkillLevelを固定値にするか、
+			// またはCSVに合わせてMedal構造体自体を修正する必要があります。
+			// 今回は skill_fight を代表値として使います。
+			SkillLevel: parseInt(record[6], 1), // "skill_fight" はインデックス6
 		})
 	}
 	return medals, nil
 }
 
+// [FIXED] LoadParts のインデックスをCSVの列に完全に合わせる
 func LoadParts(filePath string) (map[string]*Part, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -67,24 +74,27 @@ func LoadParts(filePath string) (map[string]*Part, error) {
 		if err == io.EOF {
 			break
 		}
-		if err != nil || len(record) < 12 {
+		if err != nil || len(record) < 14 { // 列数は14
 			continue
 		}
-		armor := parseInt(record[4], 1)
+		// 正しいインデックスでArmorを読み込む
+		armor := parseInt(record[6], 1)
 		part := &Part{
-			ID:         record[0],
-			PartName:   record[1],
-			Type:       PartType(record[2]),
-			Category:   PartCategory(record[3]),
-			Armor:      armor,
-			MaxArmor:   armor,
-			Power:      parseInt(record[5], 0),
-			Charge:     parseInt(record[6], 1),
-			Cooldown:   parseInt(record[7], 1),
-			Accuracy:   parseInt(record[8], 0),
-			Mobility:   parseInt(record[9], 0),
-			Propulsion: parseInt(record[10], 0),
-			Trait:      Trait(record[11]),
+			ID:       record[0],
+			PartName: record[1],
+			Type:     PartType(record[2]),
+			Category: PartCategory(record[3]),
+			Trait:    Trait(record[4]),
+			// weapon_type (record[5]) は現在Part構造体にないので読み飛ばす
+			Armor:    armor,
+			MaxArmor: armor,
+			Power:    parseInt(record[7], 0), // power はインデックス7
+			Charge:   parseInt(record[8], 1), // charge はインデックス8
+			Cooldown: parseInt(record[9], 1), // cooldown はインデックス9
+			// defense (record[10]) は現在Part構造体にないので読み飛ばす
+			Accuracy:   parseInt(record[11], 0), // accuracy はインデックス11
+			Mobility:   parseInt(record[12], 0), // mobility はインデックス12
+			Propulsion: parseInt(record[13], 0), // propulsion はインデックス13
 			IsBroken:   false,
 		}
 		partsMap[part.ID] = part
@@ -92,6 +102,7 @@ func LoadParts(filePath string) (map[string]*Part, error) {
 	return partsMap, nil
 }
 
+// ... (LoadMedarotLoadouts, LoadAllGameDataは変更なし) ...
 func LoadMedarotLoadouts(filePath string) ([]MedarotData, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
