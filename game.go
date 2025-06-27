@@ -10,39 +10,41 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
+
 // ... (Game構造体、NewGame, Updateは変更なし) ...
 type Game struct {
-	GameData *GameData
-	Config   Config
-	MplusFont text.Face
-	TickCount int
-	DebugMode bool
-	State GameState
-	PlayerTeam TeamID
-	actionQueue []*Medarot
+	GameData              *GameData
+	Config                Config
+	MplusFont             text.Face
+	TickCount             int
+	DebugMode             bool
+	State                 GameState
+	PlayerTeam            TeamID
+	actionQueue           []*Medarot
 	sortedMedarotsForDraw []*Medarot
-	Medarots []*Medarot
-	team1Leader *Medarot
-	team2Leader *Medarot
-	ui *UI
-	message string
-	postMessageCallback func()
-	winner TeamID
-	restartRequested bool
-	playerMedarotToAct *Medarot
+	Medarots              []*Medarot
+	team1Leader           *Medarot
+	team2Leader           *Medarot
+	ui                    *UI
+	message               string
+	postMessageCallback   func()
+	winner                TeamID
+	restartRequested      bool
+	playerMedarotToAct    *Medarot
 }
+
 func NewGame(gameData *GameData, config Config, font text.Face) *Game {
 	g := &Game{
-		GameData:   gameData,
-		Config:     config,
-		MplusFont:  font,
-		TickCount:  0,
-		DebugMode:  true,
-		State:      StatePlaying,
-		PlayerTeam: Team1,
-		actionQueue: make([]*Medarot, 0),
+		GameData:              gameData,
+		Config:                config,
+		MplusFont:             font,
+		TickCount:             0,
+		DebugMode:             true,
+		State:                 StatePlaying,
+		PlayerTeam:            Team1,
+		actionQueue:           make([]*Medarot, 0),
 		sortedMedarotsForDraw: make([]*Medarot, 0),
-		playerMedarotToAct: nil,
+		playerMedarotToAct:    nil,
 	}
 	g.Medarots = InitializeAllMedarots(g.GameData)
 	if len(g.Medarots) == 0 {
@@ -90,7 +92,6 @@ func (g *Game) Update() error {
 	return nil
 }
 
-
 // [ADDED] getTargetCandidatesメソッドをラッパーとして復活
 func (g *Game) getTargetCandidates(actingMedarot *Medarot) []*Medarot {
 	// 内部でai.goの関数を呼び出す
@@ -116,23 +117,23 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return g.Config.UI.Screen.Width, g.Config.UI.Screen.Height
 }
 func (g *Game) initializeMedarotLists() {
-    g.sortedMedarotsForDraw = make([]*Medarot, len(g.Medarots))
-    copy(g.sortedMedarotsForDraw, g.Medarots)
-    sort.Slice(g.sortedMedarotsForDraw, func(i, j int) bool {
-        if g.sortedMedarotsForDraw[i].Team != g.sortedMedarotsForDraw[j].Team {
-            return g.sortedMedarotsForDraw[i].Team < g.sortedMedarotsForDraw[j].Team
-        }
-        return g.sortedMedarotsForDraw[i].DrawIndex < g.sortedMedarotsForDraw[j].DrawIndex
-    })
-    for _, m := range g.Medarots {
-        if m.IsLeader {
-            if m.Team == Team1 {
-                g.team1Leader = m
-            } else {
-                g.team2Leader = m
-            }
-        }
-    }
+	g.sortedMedarotsForDraw = make([]*Medarot, len(g.Medarots))
+	copy(g.sortedMedarotsForDraw, g.Medarots)
+	sort.Slice(g.sortedMedarotsForDraw, func(i, j int) bool {
+		if g.sortedMedarotsForDraw[i].Team != g.sortedMedarotsForDraw[j].Team {
+			return g.sortedMedarotsForDraw[i].Team < g.sortedMedarotsForDraw[j].Team
+		}
+		return g.sortedMedarotsForDraw[i].DrawIndex < g.sortedMedarotsForDraw[j].DrawIndex
+	})
+	for _, m := range g.Medarots {
+		if m.IsLeader {
+			if m.Team == Team1 {
+				g.team1Leader = m
+			} else {
+				g.team2Leader = m
+			}
+		}
+	}
 }
 func (g *Game) updateProgress() {
 	for _, m := range g.Medarots {
@@ -199,33 +200,36 @@ func (g *Game) findNextIdlePlayerMedarot() *Medarot {
 	return nil
 }
 func (g *Game) checkGameEnd() {
-    if g.State == StateGameOver {
-        return
-    }
-    team1Func := 0
-    team2Func := 0
-    for _, m := range g.Medarots {
-        if m.State != StateBroken {
-            if m.Team == Team1 {
-                team1Func++
-            } else {
-                team2Func++
-            }
-        }
-    }
-    if g.team1Leader.State == StateBroken || team2Func == 0 {
-        g.winner = Team2
-        g.State = StateGameOver
-        g.enqueueMessage("チーム2の勝利！", nil)
-    } else if g.team2Leader.State == StateBroken || team1Func == 0 {
-        g.winner = Team1
-        g.State = StateGameOver
-        g.enqueueMessage("チーム1の勝利！", nil)
-    }
+	if g.State == StateGameOver {
+		return
+	}
+	team1Func := 0
+	team2Func := 0
+	for _, m := range g.Medarots {
+		if m.State != StateBroken {
+			if m.Team == Team1 {
+				team1Func++
+			} else {
+				team2Func++
+			}
+		}
+	}
+	// チーム1リーダーの頭部が破壊されているか、またはチーム2が全滅した場合
+if g.team1Leader.GetPart(PartSlotHead).IsBroken || team2Func == 0 {
+    g.winner = Team2
+    g.State = StateGameOver
+    // チーム1リーダーが機能停止したことをメッセージに追加するとより分かりやすい
+    g.enqueueMessage(fmt.Sprintf("%sが機能停止！ チーム2の勝利！", g.team1Leader.Name), nil)
+// チーム2リーダーの頭部が破壊されているか、またはチーム1が全滅した場合
+} else if g.team2Leader.GetPart(PartSlotHead).IsBroken || team1Func == 0 {
+    g.winner = Team1
+    g.State = StateGameOver
+    g.enqueueMessage(fmt.Sprintf("%sが機能停止！ チーム1の勝利！", g.team2Leader.Name), nil)
+}
 }
 func (g *Game) enqueueMessage(msg string, callback func()) {
-    g.message = msg
-    g.postMessageCallback = callback
-    g.State = StateMessage
-    g.ui.ShowMessageWindow(g)
+	g.message = msg
+	g.postMessageCallback = callback
+	g.State = StateMessage
+	g.ui.ShowMessageWindow(g)
 }
