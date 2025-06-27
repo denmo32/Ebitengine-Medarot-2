@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/widget"
 )
@@ -13,12 +12,15 @@ type UI struct {
 	actionModal       widget.PreferredSizeLocateableWidget
 	messageWindow     widget.PreferredSizeLocateableWidget
 	battlefieldWidget *BattlefieldWidget
+	medarotInfoPanels map[string]*infoPanelUI
 }
 
 // NewUI はUIを構築し、管理構造体を返す
 func NewUI(game *Game) *UI {
-	// UI構造体のインスタンスを作成
-	ui := &UI{}
+	ui := &UI{
+		// フィールドをここで初期化する
+		medarotInfoPanels: make(map[string]*infoPanelUI),
+	}
 
 	// --- UIの構築 ---
 	rootContainer := widget.NewContainer(
@@ -75,10 +77,10 @@ func NewUI(game *Game) *UI {
 	mainUIContainer.AddChild(team2PanelContainer)
 
 	// メダロット情報パネルを生成して配置
-	medarotInfoPanelUIs = make(map[string]*infoPanelUI)
 	for _, m := range game.Medarots {
 		panelUI := createSingleMedarotInfoPanel(game, m)
-		medarotInfoPanelUIs[m.ID] = panelUI
+		// グローバル変数ではなく、UI構造体のフィールドに格納する
+		ui.medarotInfoPanels[m.ID] = panelUI
 		if m.Team == Team1 {
 			team1PanelContainer.AddChild(panelUI.rootContainer)
 		} else {

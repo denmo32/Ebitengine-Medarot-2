@@ -197,6 +197,7 @@ type Part struct {
 	Propulsion int
 	Mobility   int
 	Defense    int
+	
 	IsBroken   bool
 }
 type Medal struct {
@@ -216,4 +217,3 @@ type infoPanelPartUI struct {
 	hpBar        *widget.ProgressBar
 }
 
-var medarotInfoPanelUIs map[string]*infoPanelUI

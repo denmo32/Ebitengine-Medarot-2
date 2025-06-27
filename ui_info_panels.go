@@ -105,7 +105,8 @@ func createSingleMedarotInfoPanel(game *Game, medarot *Medarot) *infoPanelUI {
 
 func updateAllInfoPanels(game *Game) {
 	for _, medarot := range game.Medarots {
-		ui, ok := medarotInfoPanelUIs[medarot.ID]
+		// グローバル変数 `medarotInfoPanelUIs` の代わりに `game.ui.medarotInfoPanels` を参照する
+		ui, ok := game.ui.medarotInfoPanels[medarot.ID]
 		if !ok {
 			continue
 		}
